@@ -1,0 +1,134 @@
+---
+title: "Data Science Capstone Project: Milestone Report"
+author: "Md. Moaz Ahmed Asif"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include = F}
+knitr::opts_chunk$set(echo = T, out.width = "100%", warning = "", message = F)
+```
+
+## Synopsis
+
+This is the Milestone Report for the Coursera Data Science Capstone project. The goal of the capstone project is to create a predictive text model using a large text corpus of documents as training data. Natural language processing techniques will be used to perform the analysis and build the predictive model.
+
+This milestone report describes the major features of the training data with our exploratory data analysis and summarizes our plans for creating the predictive model.
+
+## Getting the data
+
+```{r, cache = T}
+options(timeout = 6000)
+library(downloader)
+library(plyr)
+library(dplyr)
+
+if(!file.exists("./Coursera-SwiftKey.zip")){
+        download.file("https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip",
+                      destfile="./Coursera-SwiftKey.zip")
+}
+if(!file.exists("./final")) {
+        unzip("./Coursera-SwiftKey.zip")
+}
+list.files("./final")
+list.files("./final/en_US")
+``` 
+Once the dataset is downloaded start reading it as this a huge dataset so we'll read line by line only the amount of data needed before doing that lets first list all the files in the directory
+List all the files of /final/en_US Dataset folder
+The data sets consist of text from 3 different sources: 1) News, 2) Blogs and 3) Twitter feeds. In this project, we will only focus on the English - US data sets.
+
+```{r, cache = T}
+library(stringi)
+en_tw <- file("./final/en_US/en_US.twitter.txt")
+lineTw <- readLines(en_tw, skipNul = T)
+lineTw.words <- stri_count_words(lineTw)
+lineTw.size <- file.size("./final/en_US/en_US.twitter.txt") / 1024 / 1024
+
+en_ne <- file("./final/en_US/en_US.news.txt")
+lineNe <- readLines(en_ne, skipNul = T)
+lineNe.words <- stri_count_words(lineNe)
+lineNe.size <- file.size("./final/en_US/en_US.news.txt") / 1024 / 1024
+
+en_bl <- file("./final/en_US/en_US.blogs.txt")
+lineBl <- readLines(en_bl, skipNul = T)
+lineBl.words <- stri_count_words(lineBl)
+lineBl.size <- file.size("./final/en_US/en_US.blogs.txt") / 1024 / 1024
+```
+We examined the data sets and summarize our findings (file sizes, line counts, word counts, and mean words per line) below.
+```{r, echo = F, cache = T}
+data.frame(source = c("Twitter", "News", "Blogs"),
+           file.size.MB = c(lineTw.size, lineNe.size, lineBl.size),
+           num.lines = c(length(lineTw), length(lineNe), length(lineBl)),
+           num.words = c(sum(lineTw.words), sum(lineNe.words), sum(lineBl.words)),
+           words.per.line = c(mean(lineTw.words), mean(lineNe.words), mean(lineBl.words))) %>% t()
+```
+
+```{r, cache = T}
+library(tm)
+set.seed(Sys.Date())
+data.sample <- c(sample(lineTw, length(lineTw) * 0.02),
+                 sample(lineNe, length(lineNe) * 0.02),
+                 sample(lineBl, length(lineBl) * 0.02))
+
+corpus <- VCorpus(VectorSource(data.sample))
+toSpace1 <- function(x) gsub("(f|ht)tp(s?)://(.*)[.][a-z]+", " ", x)
+corpus <- tm_map(corpus, content_transformer(toSpace1) )
+toSpace2 <- function(x) gsub("@[^\\s]+", " ", x)
+corpus <- tm_map(corpus, content_transformer(toSpace2))
+corpus <- tm_map(corpus, tolower)
+corpus <- tm_map(corpus, removeWords, stopwords("en"))
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, PlainTextDocument)
+```
+## Exploratory Analysis
+Now tine to do some exploratory analysis on the data. It would be interesting and helpful to find the most frequently occurring words in the data. Here we list the most common (n-grams) uni-grams, bi-grams, and tri-grams.
+```{r, cache = T}
+options(mc.cores = 1)
+library(RWeka)
+library(ggplot2)
+getFreq <- function(tdm) {
+  freq <- sort(rowSums(as.matrix(tdm)), decreasing = TRUE)
+  return(data.frame(word = names(freq), freq = freq))
+}
+bigram <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+trigram <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+makePlot <- function(data, label, color) {
+  ggplot(data[1:30,], aes(reorder(word, -freq), freq)) +
+         labs(x = label, y = "Frequency") +
+         theme(axis.text.x = element_text(angle = 75, size = 10, hjust = 1)) +
+         geom_bar(stat = "identity", fill = I(color))
+}
+
+freq1 <- getFreq(removeSparseTerms(TermDocumentMatrix(corpus), 0.9999))
+freq2 <- getFreq(removeSparseTerms(TermDocumentMatrix(corpus, control = list(tokenize = bigram)), 0.9999))
+freq3 <- getFreq(removeSparseTerms(TermDocumentMatrix(corpus, control = list(tokenize = trigram)), 0.9999))
+```
+
+Here is a histogram of the 30 most common unigrams in the data sample.
+
+```{r, echo = F, cache = T}
+makePlot(freq1, "30 Most Common Uni-grams", "red")
+```
+
+Here is a histogram of the 30 most common bigrams in the data sample.
+
+```{r, echo = F, cache = T}
+makePlot(freq2, "30 Most Common Bi-grams", "green")
+```
+
+Here is a histogram of the 30 most common trigrams in the data sample.
+```{r, echo = F, cache = T}
+makePlot(freq3, "30 Most Common Tri-grams", "blue")
+```
+
+## Conclusion and further planning
+This concludes our exploratory analysis. The next steps of this capstone project would be to finalize our predictive algorithm, and deploy our algorithm as a Shiny app.
+
+Our predictive algorithm will be using n-gram model with frequency lookup similar to our exploratory analysis above. One possible strategy would be to use the trigram model to predict the next word. If no matching trigram can be found, then the algorithm would back off to the bigram model, and then to the unigram model if needed.
+
+The user interface of the Shiny app will consist of a text input box that will allow a user to enter a phrase. Then the app will use our algorithm to suggest the most likely next word after a short delay.
+```{r, include = F}
+gc()
+```

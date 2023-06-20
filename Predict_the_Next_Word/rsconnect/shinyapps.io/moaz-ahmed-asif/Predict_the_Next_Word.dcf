@@ -1,0 +1,13 @@
+name: Predict_the_Next_Word
+title: Predict_the_Next_Word
+username:
+account: moaz-ahmed-asif
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9335262
+bundleId: 7364618
+url: https://moaz-ahmed-asif.shinyapps.io/Predict_the_Next_Word/
+when: 1687229796.2759
+lastSyncTime: 1687229796.27591
+asMultiple: FALSE
+asStatic: FALSE

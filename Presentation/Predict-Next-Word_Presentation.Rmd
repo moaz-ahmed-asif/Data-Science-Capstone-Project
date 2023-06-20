@@ -1,0 +1,44 @@
+---
+title: "Predict the Next Word"
+author: "Md. Moaz Ahmed Asif"
+date: "`r Sys.Date()`"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Building a predictive text model
+
+- Create an algorithm for predicting the next word given one or more words as input using NLP
+
+- A large corpus of blog, news and twitter data was loaded and analyzed
+
+- N-grams were extracted from the corpus and then used for building the predictive model
+
+- Various methods of improving the prediction accuracy and speed were explored
+
+## Algorithm
+
+- N-gram model strategy was used
+
+- Dataset was cleaned, lower-cased, removing links, twitter handles, punctuations, numbers and extra whitespaces, etc
+
+## Shiny App
+
+- Provides a text input box for user to type a sentence.
+
+- Detects words typed and predicts the next word reactively.
+
+- Shows the time needed to predict the next word
+
+- Shows word guessed using last two words, three words, and four words
+
+- Predicts using the longest, most frequent, matching N-gram
+
+## App and resourses
+
+- Application is running at - https://moaz-ahmed-asif.shinyapps.io/Predict_the_Next_Word/
+
+- Github link for the code files - https://github.com/moaz-ahmed-asif/Data-Science-Capstone-Project
